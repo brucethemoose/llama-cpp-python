@@ -978,6 +978,10 @@ def functionary_chat_handler(
         with suppress_stdout_stderr(disable=llama.verbose):
             grammar = llama_grammar.LlamaGrammar.from_string(llama_grammar.JSON_GBNF)
 
+    if llama.verbose:
+        print("-------------------------Printing Prompt---------------------------")
+        print(new_prompt)
+        print("-------------------------Promp Printed---------------------------")
     completion: llama_types.Completion = llama.create_completion(
         prompt=new_prompt,
         stop=["user:", "</s>"],
@@ -1003,6 +1007,26 @@ def functionary_chat_handler(
     assert "usage" in completion
     assert isinstance(function_call, str)
     assert stream is False  # TODO: support stream mode
+
+    #Dump prompt + response pairs to json
+    #https://stackoverflow.com/questions/12994442/how-to-append-data-to-a-json-file
+    a = []
+    fname = "dpotraindata.json"
+    entry = {
+        "prompt": new_prompt,
+        "chosen": ["choices"][0]["text"]
+    }
+    if not os.path.isfile(fname):
+        a.append(entry)
+        with open(fname, mode='w') as f:
+            f.write(json.dumps(a, indent=2))
+    else:
+        with open(fname) as feedsjson:
+            feeds = json.load(feedsjson)
+
+        feeds.append(entry)
+        with open(fname, mode='w') as f:
+            f.write(json.dumps(feeds, indent=2))
 
     if llama.verbose:
         print(new_prompt)
